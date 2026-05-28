@@ -1,80 +1,42 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAssignmentStore } from '../store/useAssignmentStore';
-import { 
-  FileText, 
-  Trash2, 
-  AlertCircle, 
-  Clock, 
-  ExternalLink,
-  Loader2
-} from 'lucide-react';
+import { MoreVertical, Trash2, Eye, RefreshCw, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AssignmentCard({ assignment }) {
-  const { deleteAssignment, setSelectedAssignmentId, setViewMode } = useAssignmentStore();
+  const { 
+    setSelectedAssignmentId, 
+    setViewMode, 
+    deleteAssignment,
+    regenerateAssignment 
+  } = useAssignmentStore();
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'completed':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Completed
-          </span>
-        );
-      case 'processing':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
-            <Loader2 className="w-3 h-3 text-amber-500 animate-spin" />
-            Generating Paper
-          </span>
-        );
-      case 'queued':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-            <Clock className="w-3 h-3 text-blue-500" />
-            Queued
-          </span>
-        );
-      case 'failed':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
-            <AlertCircle className="w-3 h-3 text-rose-500" />
-            Failed
-          </span>
-        );
-      default:
-        return null;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close menu on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleCardClick = () => {
+    if (assignment.status === 'completed') {
+      setSelectedAssignmentId(assignment._id);
+      setViewMode('view-paper');
     }
   };
 
-  const getSubjectColor = (subject) => {
-    const sub = subject?.toLowerCase() || '';
-    if (sub.includes('math')) return 'bg-blue-50 text-blue-600 border-blue-100';
-    if (sub.includes('sci') || sub.includes('phys') || sub.includes('chem') || sub.includes('bio')) {
-      return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-    }
-    if (sub.includes('eng') || sub.includes('lang')) return 'bg-purple-50 text-purple-600 border-purple-100';
-    if (sub.includes('hist') || sub.includes('civ') || sub.includes('soc')) return 'bg-amber-50 text-amber-600 border-amber-100';
-    return 'bg-neutral-50 text-neutral-600 border-neutral-100';
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return 'N/A';
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch (e) {
-      return dateStr;
-    }
-  };
-
-  const handleView = () => {
+  const handleView = (e) => {
+    e.stopPropagation();
+    setMenuOpen(false);
     if (assignment.status === 'completed') {
       setSelectedAssignmentId(assignment._id);
       setViewMode('view-paper');
@@ -83,78 +45,178 @@ export default function AssignmentCard({ assignment }) {
 
   const handleDelete = (e) => {
     e.stopPropagation();
-    if (window.confirm(`Are you sure you want to delete "${assignment.title}"?`)) {
+    setMenuOpen(false);
+    if (confirm('Are you sure you want to delete this assignment?')) {
       deleteAssignment(assignment._id);
+    }
+  };
+
+  const handleRegenerate = (e) => {
+    e.stopPropagation();
+    setMenuOpen(false);
+    regenerateAssignment(assignment._id);
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    if (dateStr.includes('-')) return dateStr;
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-GB').replace(/\//g, '-');
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Status rendering logic
+  const renderStatusInfo = () => {
+    switch (assignment.status) {
+      case 'queued':
+        return (
+          <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-xs font-semibold w-fit border border-amber-100">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            <span>Queued for generation...</span>
+          </div>
+        );
+      case 'processing':
+        return (
+          <div className="flex items-center gap-2 text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full text-xs font-semibold w-fit border border-indigo-100">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            <span>AI generating questions...</span>
+          </div>
+        );
+      case 'failed':
+        return (
+          <div className="flex items-center gap-2 text-red-600 bg-red-50 px-3 py-1 rounded-full text-xs font-semibold w-fit border border-red-100">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Failed. Tap menu to retry</span>
+          </div>
+        );
+      case 'completed':
+      default:
+        return (
+          <>
+            {/* Desktop dates view (split bottom line) */}
+            <div className="hidden sm:flex items-center justify-between text-gray-500 text-[13px] mt-4 pt-4 border-t border-gray-100/60">
+              <div>
+                <span className="text-gray-400">Assigned on : </span>
+                <span className="font-semibold text-gray-700">{formatDate(assignment.createdAt)}</span>
+              </div>
+              {assignment.dueDate && (
+                <div>
+                  <span className="text-gray-400">Due : </span>
+                  <span className="font-semibold text-gray-700">{formatDate(assignment.dueDate)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile dates view (single responsive line below title matching Screen 2) */}
+            <div className="sm:hidden flex flex-wrap items-center gap-x-3 text-[12px] text-gray-500 mt-2">
+              <div>
+                <span className="text-gray-400">Assigned on : </span>
+                <span className="font-semibold text-gray-700">{formatDate(assignment.createdAt)}</span>
+              </div>
+              {assignment.dueDate && (
+                <div>
+                  <span className="text-gray-400">Due : </span>
+                  <span className="font-semibold text-gray-700">{formatDate(assignment.dueDate)}</span>
+                </div>
+              )}
+            </div>
+          </>
+        );
     }
   };
 
   return (
     <div 
-      onClick={handleView}
-      className={`group relative bg-white border border-gray-150 rounded-3xl p-5 md:p-6 transition-all duration-200 shadow-sm ${
+      onClick={handleCardClick}
+      className={`relative group bg-white border border-gray-150 p-5 rounded-3xl transition-all duration-300 ${
         assignment.status === 'completed' 
-          ? 'cursor-pointer hover:shadow-md hover:border-gray-300' 
-          : 'cursor-default'
+          ? 'cursor-pointer hover:shadow-md hover:shadow-gray-100/80 hover:border-gray-300' 
+          : 'opacity-90 select-none'
       }`}
     >
-      <div className="flex justify-between items-start gap-4 mb-4">
-        {/* Title & Badge */}
-        <div className="space-y-1.5 flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase border ${getSubjectColor(assignment.subject)}`}>
-              {assignment.subject}
-            </span>
-            <span className="text-[10px] bg-neutral-100 text-neutral-600 font-bold px-2 py-0.5 rounded-full">
-              Grade {assignment.class}
-            </span>
-          </div>
-          <h4 className="font-extrabold text-neutral-900 text-sm md:text-md tracking-tight truncate group-hover:text-orange-500 transition-colors">
+      {/* Card Header */}
+      <div className="flex justify-between items-start gap-2 mb-1">
+        <div className="min-w-0">
+          <span className="text-[10px] sm:text-[12px] font-bold text-orange-500 tracking-wider uppercase">
+            {assignment.subject} • Class {assignment.class}
+          </span>
+          <h3 className="text-[16px] sm:text-lg font-bold text-neutral-800 leading-tight truncate mt-0.5 group-hover:text-orange-600 transition-colors">
             {assignment.title}
-          </h4>
+          </h3>
         </div>
 
-        {/* Delete Trigger */}
-        <button 
-          onClick={handleDelete}
-          className="text-gray-400 hover:text-rose-500 p-1.5 rounded-xl hover:bg-rose-50/50 transition-colors duration-150 shrink-0"
-          title="Delete assignment"
-        >
-          <Trash2 className="w-4 h-4 stroke-[2]" />
-        </button>
+        {/* 3-Dot Dropdown */}
+        <div className="relative" ref={menuRef}>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(!menuOpen);
+            }}
+            className="p-1.5 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors"
+          >
+            <MoreVertical className="w-5 h-5" />
+          </button>
+
+          <AnimatePresence>
+            {menuOpen && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 mt-1 w-44 bg-white border border-gray-150 rounded-2xl shadow-lg shadow-neutral-100/60 py-1.5 z-10"
+              >
+                {assignment.status === 'completed' && (
+                  <button
+                    onClick={handleView}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors text-left"
+                  >
+                    <Eye className="w-4 h-4 text-neutral-400" />
+                    <span>View Assignment</span>
+                  </button>
+                )}
+                {assignment.status === 'failed' && (
+                  <button
+                    onClick={handleRegenerate}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-indigo-600 hover:bg-neutral-50 transition-colors text-left"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Retry Generation</span>
+                  </button>
+                )}
+                {assignment.status === 'completed' && (
+                  <button
+                    onClick={handleRegenerate}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors text-left"
+                  >
+                    <RefreshCw className="w-4 h-4 text-neutral-400" />
+                    <span>Regenerate AI</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleDelete}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* Description / Instructions */}
-      <p className="text-gray-400 text-xs line-clamp-2 leading-relaxed mb-5">
-        {assignment.instructions || `Automatic AI generated question paper containing ${assignment.numQuestions || 5} structured assessments.`}
-      </p>
-
-      {/* Footer Info Row */}
-      <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-[10px] md:text-xs">
-        <div className="flex items-center gap-1.5 text-gray-500 font-medium">
-          <Clock className="w-3.5 h-3.5 text-gray-400" />
-          <span>Due {formatDate(assignment.dueDate)}</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {getStatusBadge(assignment.status)}
-          
-          {assignment.status === 'completed' && (
-            <span className="text-orange-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200 flex items-center gap-1 font-bold text-xs">
-              View Paper
-              <ExternalLink className="w-3 h-3" />
-            </span>
-          )}
-        </div>
+      {/* Main Card Content */}
+      <div className="mt-2">
+        {renderStatusInfo()}
       </div>
 
-      {/* Display errors if generation failed */}
-      {assignment.status === 'failed' && assignment.errorMessage && (
-        <div className="mt-3 p-3 bg-rose-50/50 border border-rose-100 rounded-2xl flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-          <p className="text-[10px] text-rose-600 font-semibold leading-relaxed">
-            Generation Failed: {assignment.errorMessage}
-          </p>
-        </div>
+      {/* Subtle indicator decoration */}
+      {assignment.status === 'completed' && (
+        <div className="absolute top-0 left-12 w-8 h-[2px] bg-gradient-to-r from-orange-500 to-amber-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
       )}
     </div>
   );

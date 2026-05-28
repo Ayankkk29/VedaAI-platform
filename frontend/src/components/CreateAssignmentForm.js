@@ -150,6 +150,12 @@ export default function CreateAssignmentForm() {
     await createAssignment(payload);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+      e.preventDefault();
+    }
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-4 sm:p-8 max-w-3xl mx-auto w-full">
       {/* Back button */}
@@ -181,7 +187,7 @@ export default function CreateAssignmentForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onFormSubmit)} onKeyDown={handleKeyDown} className="space-y-5">
         {/* STEP 1: BASIC DETAILS */}
         {step === 1 && (
           <div className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
@@ -495,6 +501,7 @@ export default function CreateAssignmentForm() {
         <div className="flex items-center justify-between pt-2">
           {step > 1 ? (
             <button
+              key="btn-prev"
               type="button"
               onClick={handlePrevStep}
               className="flex items-center gap-1 px-5 py-2.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-xs sm:text-sm font-semibold text-gray-600 transition-colors shadow-sm"
@@ -503,11 +510,12 @@ export default function CreateAssignmentForm() {
               <span>Previous</span>
             </button>
           ) : (
-            <div />
+            <div key="empty-prev" />
           )}
 
           {step < 3 ? (
             <button
+              key="btn-next"
               type="button"
               onClick={handleNextStep}
               className="flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold py-2.5 px-6 rounded-full transition-colors text-xs sm:text-sm shadow-md"
@@ -517,6 +525,7 @@ export default function CreateAssignmentForm() {
             </button>
           ) : (
             <button
+              key="btn-submit"
               type="submit"
               disabled={!isValid || !isDistValid}
               className={`flex items-center gap-1.5 font-semibold py-2.5 px-6 rounded-full transition-all text-xs sm:text-sm ${

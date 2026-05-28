@@ -1,4 +1,7 @@
 {
+  "name": "vedaai-platform",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
     "install-all": "cd backend && npm install && cd ../frontend && npm install",
     "backend": "cd backend && npm run dev",

@@ -1,0 +1,42 @@
+VedaAI Assessment Creator - Project Requirements & Dependencies
+
+================================================================================
+System Requirements
+================================================================================
+Node.js: v18.x or higher
+NPM: v9.x or higher
+MongoDB: v6.0 or higher (optional, falls back to In-Memory mode if offline)
+Redis: v7.0 or higher (optional, falls back to local queue mode if offline)
+
+================================================================================
+Backend Service Dependencies (backend/package.json)
+================================================================================
+- express (^4.19.2) - HTTP framework
+- cors (^2.8.5) - Cross-Origin Resource Sharing middleware
+- dotenv (^16.4.5) - Environment variable manager
+- mongoose (^8.4.0) - MongoDB Object Modeling tool
+- ioredis (^5.4.1) - Redis client
+- bullmq (^5.8.2) - Redis-backed background job queue
+- socket.io (^4.7.5) - Real-time WebSocket server
+- openai (^4.47.1) - OpenAI API client
+- uuid (^9.0.1) - Unique ID generator
+- zod (^3.23.8) - Schema validation library
+
+Dev Dependencies:
+- nodemon (^3.1.0) - Auto-reload node server in development
+
+================================================================================
+Frontend Application Dependencies (frontend/package.json)
+================================================================================
+- next (14.2.35) - React Framework (App Router)
+- react (^18) - Core UI library
+- react-dom (^18) - DOM renderer
+- tailwindcss (^3.4.1) - Styling framework
+- zustand (^5.0.13) - State management library
+- socket.io-client (^4.8.3) - WebSocket client
+- react-hook-form (^7.76.1) - Form state manager
+- zod (^4.4.3) - Input validation schemas
+- @hookform/resolvers (^5.4.0) - Link react-hook-form with Zod schemas
+- framer-motion (^12.40.0) - UI micro-animations and menu transitions
+- lucide-react (^1.16.0) - UI icons kit
+- @react-pdf/renderer (^4.5.1) - Client-side printable PDF compiler

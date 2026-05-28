@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # 1. MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: veda-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+
+  # 2. Redis Cache & BullMQ state
+  redis:
+    image: redis:7.0-alpine
+    container_name: veda-redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  # 3. Node.js Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: veda-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongodb:27017/veda-ai
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - mongodb
+      - redis
+    restart: always
+
+  # 4. Next.js Frontend App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: veda-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  mongo-data:

@@ -9,6 +9,8 @@ export async function checkRedisConnection() {
 
   console.log(`🔌 Probing Redis server at ${host}:${port}...`);
 
+  const useTls = host.includes('upstash.io') || process.env.REDIS_TLS === 'true';
+
   return new Promise((resolve) => {
     const tempClient = new Redis({
       host,
@@ -17,6 +19,7 @@ export async function checkRedisConnection() {
       maxRetriesPerRequest: null,
       connectTimeout: 1500, // 1.5 second timeout
       lazyConnect: false,
+      ...(useTls ? { tls: {} } : {}),
     });
 
     let resolved = false;
@@ -69,12 +72,14 @@ export function getRedisConnection() {
   const host = process.env.REDIS_HOST || '127.0.0.1';
   const port = parseInt(process.env.REDIS_PORT || '6379', 10);
   const password = process.env.REDIS_PASSWORD || undefined;
+  const useTls = host.includes('upstash.io') || process.env.REDIS_TLS === 'true';
 
   const client = new Redis({
     host,
     port,
     password,
     maxRetriesPerRequest: null,
+    ...(useTls ? { tls: {} } : {}),
   });
 
   // Attach error handler to catch connection resets (ECONNRESET) gracefully
